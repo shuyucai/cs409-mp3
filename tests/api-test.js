@@ -39,6 +39,11 @@ function expectStatus(label, res, status) {
     check(label + ' {message,data}', res.body && typeof res.body.message === 'string' && 'data' in res.body, res.text);
 }
 
+function expectDeleted(label, res) {
+    check(label + ' [204]', res.status === 204, { status: res.status, body: res.text });
+    check(label + ' empty body', res.text === '', res.text);
+}
+
 function q(obj) {
     return encodeURIComponent(JSON.stringify(obj));
 }
@@ -237,14 +242,14 @@ async function main() {
     // ---------- Deleting ----------
     r = await newTask('del', { assignedUser: alice._id });
     var del = r.body.data;
-    expectStatus('DELETE task', await call('DELETE', '/tasks/' + del._id), 200);
+    expectDeleted('DELETE task', await call('DELETE', '/tasks/' + del._id));
     expectStatus('GET deleted task', await call('GET', '/tasks/' + del._id), 404);
     check('deleted task removed from pendingTasks', (await getUser(alice._id)).pendingTasks.indexOf(del._id) === -1);
     expectStatus('DELETE task again', await call('DELETE', '/tasks/' + del._id), 404);
     expectStatus('DELETE malformed task id', await call('DELETE', '/tasks/bad'), 404);
 
     await call('PUT', '/tasks/' + t2._id, { name: 't2', deadline: '2030-01-01', assignedUser: alice._id });
-    expectStatus('DELETE user', await call('DELETE', '/users/' + alice._id), 200);
+    expectDeleted('DELETE user', await call('DELETE', '/users/' + alice._id));
     expectStatus('GET deleted user', await call('GET', '/users/' + alice._id), 404);
     var t2after = await getTask(t2._id);
     var t3after = await getTask(t3._id);

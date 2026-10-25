@@ -159,14 +159,14 @@ module.exports = function (router) {
     });
 
     taskRoute.delete(async function (req, res) {
-        var task = await mongoose.connection.transaction(async function (session) {
+        await mongoose.connection.transaction(async function (session) {
             var existing = await findTaskForUpdate(req.params.id, session);
             var taskId = existing._id.toString();
             await User.updateMany({ pendingTasks: taskId }, { $pull: { pendingTasks: taskId } }, { session: session });
             await existing.deleteOne({ session: session });
-            return existing;
         });
-        api.send(res, 200, 'Task deleted', task);
+        // Success: 204 No Content, so no response body
+        res.status(204).end();
     });
 
     return router;

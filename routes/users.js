@@ -136,13 +136,13 @@ module.exports = function (router) {
     });
 
     userRoute.delete(async function (req, res) {
-        var user = await mongoose.connection.transaction(async function (session) {
+        await mongoose.connection.transaction(async function (session) {
             var existing = await findUserForUpdate(req.params.id, session);
             await Task.updateMany({ assignedUser: existing._id.toString() }, UNASSIGNED, { session: session });
             await existing.deleteOne({ session: session });
-            return existing;
         });
-        api.send(res, 200, 'User deleted', user);
+        // Success: 204 No Content, so no response body
+        res.status(204).end();
     });
 
     return router;
